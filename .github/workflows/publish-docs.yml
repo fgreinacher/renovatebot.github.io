@@ -8,9 +8,11 @@ on:
   pull_request:
     branches:
       - 'main'
+  workflow_dispatch:
 
 env:
-  POETRY_VERSION: 1.8.1 # renovate: datasource=pypi depName=poetry
+  PDM_VERSION: 2.22.3 # renovate: datasource=pypi depName=pdm
+  HUSKY: 0 # disable husky on CI
 
 jobs:
   build:
@@ -19,31 +21,28 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: true
 
-      - name: enable corepack
-        run: corepack enable
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          standalone: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
           node-version-file: .node-version
           cache: 'pnpm' # doesn't cache cypress
           cache-dependency-path: '**/pnpm-lock.yaml'
 
-      - name: enable corepack
-        run: corepack enable
-
-      - name: Install poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - name: Set up Python
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@b2472ca4258a9ea3aee813980a0100a2261a42fc # v4.2
         with:
           python-version-file: .python-version
-          cache: 'poetry'
+          version: ${{ env.PDM_VERSION }}
+          cache: true
 
       - name: Init platform
         run: |
@@ -52,10 +51,10 @@ jobs:
           git config --global user.email 'bot@renovateapp.com'
           git config --global user.name  'Renovate Bot'
           python --version
-          poetry --version
+          pdm --version
 
       - name: Cache node_modules and cypress
-        uses: actions/cache@e12d46a63a90f2fae62d114769bbf2a179198b5c # v3.3.3
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: |
             ~/.cache/Cypress
@@ -69,7 +68,7 @@ jobs:
         run: pnpm prettier
 
       - name: Run shellcheck
-        uses: reviewdog/action-shellcheck@96fa305c16b0f9cc9b093af22dcd09de1c8f1c2d # v1.19.0
+        uses: reviewdog/action-shellcheck@6e0e63d1750d02d761b3df0f2c5ba9f9ac4a9ed7 # v1.29.0
         with:
           reporter: github-pr-review
           filter_mode: nofilter
@@ -90,14 +89,14 @@ jobs:
         run: make build-docs
 
       - name: Upload site artifacts
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: site
           path: site/
           if-no-files-found: error
 
       - name: Cypress run
-        uses: cypress-io/github-action@1b70233146622b69e789ccdd4f9452adc638d25a # v6.6.1
+        uses: cypress-io/github-action@7271bed2a170d73c0b08939cd192db51a1c46c50 # v6.7.10
         with:
           start: make serve
           wait-on: 'http://127.0.0.1:8000/'
@@ -106,7 +105,7 @@ jobs:
         timeout-minutes: 3
 
       - name: Upload cypress artifacts
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         if: always()
         with:
           name: cypress

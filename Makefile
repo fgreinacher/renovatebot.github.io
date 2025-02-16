@@ -1,8 +1,14 @@
 default: install build
 
+STRICT?=true
+
+ifeq ($(STRICT),true)
+  build_args=--strict
+endif
+
 install:
 	pnpm install --frozen-lockfile
-	poetry install --no-root
+	pdm install
 
 prepare-vercel:
 	bash bin/prepare-vercel.sh
@@ -16,7 +22,7 @@ get-docs:
 	bash bin/get-docs.sh
 
 build-docs:
-	poetry run mkdocs build
+	pdm run mkdocs build $(build_args)
 
 prepare: get-docs
 
@@ -30,7 +36,7 @@ clean:
 	rm -rf build tmp
 
 serve:
-	poetry run mkdocs serve
+	pdm run mkdocs serve
 
 deploy:
-	poetry run mkdocs gh-deploy --force
+	pdm run mkdocs gh-deploy --force
