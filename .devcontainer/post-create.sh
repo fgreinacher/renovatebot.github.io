@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 if [[ "${CODESPACES}" == true ]]; then
   echo "Fixing permissions of /tmp for GitHub Codespaces..." >&2
@@ -8,4 +8,4 @@ if [[ "${CODESPACES}" == true ]]; then
 fi
 
 git submodule update --init
-make
+make STRICT=false

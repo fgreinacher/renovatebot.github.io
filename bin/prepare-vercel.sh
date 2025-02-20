@@ -2,24 +2,19 @@
 
 set -e
 
-PYTHON_VERSION=3.12.1
 
-yum install -y \
-  openssl11 \
-  sqlite \
-  xz \
-  ;
+# renovate: datasource=docker depName=python
+PYTHON_VERSION=3.13
 
-mkdir -p /usr/local/python
+# renovate: datasource=pypi depName=pdm
+PDM_VERSION=2.22.3
 
-curl -sSLo /tmp/python.tar.xz "https://github.com/containerbase/python-prebuild/releases/download/${PYTHON_VERSION}/python-amzn-2-x86_64.tar.xz"
+# install python and pip
+yum install -y python${PYTHON_VERSION} python${PYTHON_VERSION}-pip
 
-tar -xf /tmp/python.tar.xz -C /usr/local/python
+# install pdm
+python${PYTHON_VERSION} -m pip install pdm==${PDM_VERSION}
 
-ln -sf /usr/local/python/${PYTHON_VERSION}/bin/python /usr/local/bin/python
-ln -sf /usr/local/python/${PYTHON_VERSION}/bin/pip /usr/local/bin/pip
-
-python -m pip install poetry
-ln -sf /usr/local/python/${PYTHON_VERSION}/bin/poetry /usr/local/bin/poetry
-
-poetry --version
+# print versions
+python${PYTHON_VERSION} --version
+pdm --version
